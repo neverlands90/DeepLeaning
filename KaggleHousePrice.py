@@ -25,7 +25,7 @@ train_labels = torch.tensor(train_data.SalePrice.values, dtype=torch.float32).vi
 # Define the Loss Function
 loss = nn.MSELoss()
 # Define the Model
-net = nn.Sequential(nn.Linear(train_features.shape[-1], 1))
+net = nn.Sequential(nn.Linear(train_features.shape[-1], 128), nn.ReLU(), nn.Linear(128, 1))
 # Define the Error Measure Function
 def log_rmse(net, features, labels):
     # stabilize the log value
@@ -36,7 +36,7 @@ def log_rmse(net, features, labels):
 
 # Define the Training Function
 def train(train_features, test_features, train_labels, test_labels,
-           num_epochs=100, learning_rate=5, weight_decay=0, batch_size=64):
+           num_epochs=30, learning_rate=0.1, weight_decay=1, batch_size=64):
 
     # Generating Data Sets
     dataset = data.TensorDataset(train_features, train_labels)
@@ -82,7 +82,7 @@ def k_fold(k):
         print(ls_train[-1], ls_test[-1])
     return sum_train / k, sum_test / k
 
-# train_k, test_k = k_fold(k=5)
+# train_k, test_k = k_fold(k=3)
 
 # Predict
 def semilogy(x_vals, y_vals, x_label='epochs', y_label='loss',
@@ -95,8 +95,8 @@ def semilogy(x_vals, y_vals, x_label='epochs', y_label='loss',
     pyplot.show()
 
 ls_train, _ = train(train_features, None, train_labels, None)
-semilogy(range(100), ls_train)
-preds = net(train_features).detach().numpy()
+semilogy(range(len(ls_train)), ls_train)
+preds = net(test_features).detach().numpy()
 test_data['SalePrice'] = pandas.Series(preds.reshape(len(preds)))
 submission = pandas.concat([test_data.Id, test_data.SalePrice], 1)
 submission.to_csv('data/kaggle_house/my_submission.csv', index=False)
