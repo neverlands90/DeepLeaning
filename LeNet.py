@@ -31,18 +31,18 @@ def evaluate_accuracy(net, iter):
     acc_sum = 0
     acc_n = 0
     for X, y in iter:
-        out = net(X).argmax(dim=1)
-        acc_sum += (out == y).float().sum().item()
+        out = net(X.to(device)).argmax(dim=1)
+        acc_sum += (out == y.to(device)).float().sum().cpu().item()
         acc_n += y.shape[0]
     return acc_sum/acc_n
 
 
-def semilogy(x_vals, y_vals, x2_vals, y2_vals, x_label='epochs', y_label='accuracy',
+def myplot(x_vals, y_vals, x2_vals, y2_vals, x_label='epochs', y_label='accuracy',
              legend=['train', 'test']):
     pyplot.xlabel(x_label)
     pyplot.ylabel(y_label)
-    pyplot.semilogy(x_vals, y_vals)
-    pyplot.semilogy(x2_vals, y2_vals, linestyle='--')
+    pyplot.plot(x_vals, y_vals)
+    pyplot.plot(x2_vals, y2_vals, linestyle='--')
     pyplot.legend(legend)
     pyplot.show()
 
@@ -52,12 +52,19 @@ num_epochs = 5
 loss = nn.CrossEntropyLoss()
 # Define the Train Method
 trainer = torch.optim.Adam(net.parameters(), lr=0.001)
+# CUDA
+device = torch.device('cuda')
+net = net.to(device)
+print(f'device={device}')
 
 # Training
+time_before = time.time()
 ls_train, ls_test = [], []
 for i in range(num_epochs):
     net.train()
     for X, y in train_iter:
+        X = X.to(device)
+        y = y.to(device)
         l = loss(net(X), y)
         l.backward()
         trainer.step()
@@ -65,5 +72,7 @@ for i in range(num_epochs):
     net.eval()
     ls_train.append(evaluate_accuracy(net, train_iter))
     ls_test.append(evaluate_accuracy(net, test_iter))
-    print(i)
-semilogy(range(len(ls_train)), ls_train, range(len(ls_test)), ls_test)
+    time_after = time.time()
+    print(i, time_after - time_before)
+    time_before = time_after
+myplot(range(len(ls_train)), ls_train, range(len(ls_test)), ls_test)
