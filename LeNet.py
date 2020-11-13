@@ -4,7 +4,7 @@ from torch import nn
 from matplotlib import pyplot
 import time
 # Generating Data Sets
-batch_size = 256
+batch_size = 1024
 train_iter, test_iter = load_data_fashion_mnist(batch_size)
 
 # Define the Model
@@ -31,8 +31,8 @@ def evaluate_accuracy(net, iter):
     acc_sum = 0
     acc_n = 0
     for X, y in iter:
-        out = net(X.to(device)).argmax(dim=1)
-        acc_sum += (out == y.to(device)).float().sum().cpu().item()
+        out = net(X.to(device)).argmax(dim=1).cpu()
+        acc_sum += (out == y).float().sum().item()
         acc_n += y.shape[0]
     return acc_sum/acc_n
 
@@ -69,10 +69,17 @@ for i in range(num_epochs):
         l.backward()
         trainer.step()
         trainer.zero_grad()
+
+    time_after = time.time()
+    print('train', i, time_after - time_before)
+    time_before = time_after
+
     net.eval()
     ls_train.append(evaluate_accuracy(net, train_iter))
     ls_test.append(evaluate_accuracy(net, test_iter))
+
     time_after = time.time()
-    print(i, time_after - time_before)
+    print('eval', i, time_after - time_before)
     time_before = time_after
+
 myplot(range(len(ls_train)), ls_train, range(len(ls_test)), ls_test)
